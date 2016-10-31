@@ -1,7 +1,156 @@
-#include <stdio.h>
+#include <windows.h>
 #include <string.h>
 #include "hotpatch.h"
-#include <windows.h>
+
+#define SKIP 0x00
+#define WORD 0x10
+#define SEGM 0x20
+#define REGM 0x30
+#define IMPL 0x40
+#define OFFS 0x50
+#define GRP5 0x60
+
+static const char OneByte[] = {
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 00
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 0|SKIP, // 08
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 10
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 18
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 20
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 28
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 30
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 38
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 40
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 48
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 50
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 58
+	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 1|SEGM, 1|SEGM, 1|WORD, 0|SKIP, // 60
+	5|IMPL, 5|REGM, 2|IMPL, 2|REGM, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 68
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 70
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 78
+	2|REGM, 5|REGM, 0|SKIP, 2|REGM, 1|REGM, 1|REGM, 1|REGM, 1|REGM, // 80
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 0|SKIP, 1|REGM, 0|SKIP, 1|REGM, // 88
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 90
+	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 98
+	5|OFFS, 5|OFFS, 5|OFFS, 5|OFFS, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // A0
+	2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // A8
+	2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // B0
+	5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, // B8
+	2|REGM, 2|REGM, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|REGM, 5|REGM, // C0
+	4|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // C8
+	1|REGM, 1|REGM, 1|REGM, 1|REGM, 1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, // D0
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // D8
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // E0
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // E8
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|REGM, 1|REGM, // F0
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|REGM, 1|GRP5  // F8
+}; 
+
+int instLen(void* ptr)
+{
+	unsigned char* bptr =
+		(unsigned char*)ptr;
+	int length = 0;
+	bool word = false;
+	
+	while(1)
+	{
+		int opcode = OneByte[*bptr++];
+		int regmem = *bptr;
+		int size = opcode & 0x0F;
+		int type = opcode & 0xF0;
+
+		switch(type)
+		{
+		case SKIP:
+			return -1;
+		case WORD:
+			word = true;
+		case SEGM:
+			length++;
+			continue;
+		case GRP5:
+			switch((regmem >> 3) & 7)
+			{
+			case 0:
+			case 1:
+			case 6:
+				break;
+			default:
+				return -1;
+			}
+		case REGM:
+			switch(regmem >> 6)
+			{
+			case 0:
+				length += 1;
+				if((regmem & 7) == 4)
+					length += 1;
+				if((regmem & 7) == 5)
+					length += 4;
+				break;
+			case 2:
+				length += 3;
+			case 1:
+				length += 1;
+				if((regmem & 7) == 4)
+					length += 1;
+			case 3:
+				length += 1;
+				break;
+			}
+		case IMPL:
+			if(( size == 5 )
+			&&( word == true))
+				size = 3;
+		case OFFS:
+			length += size;
+			break;
+		}
+		break;
+	}
+	return length;
+}
+
+
+struct PatchPage
+{
+	struct PatchEntry
+	{
+		BYTE len;
+		BYTE code[13];
+	};
+	PatchEntry* Alloc(void);
+	void Free(PatchEntry* entry)
+	{	entry->len = 0; }
+	PatchPage();
+private:
+	PatchEntry* data;
+	int freeHint;
+} patchPage;
+
+PatchPage::PatchPage(void)
+{
+	data = (PatchEntry*)VirtualAlloc(0, 4096,
+		MEM_COMMIT, PAGE_EXECUTE_READWRITE);	
+}
+
+PatchPage::PatchEntry* PatchPage::Alloc(void)
+{
+TRY_AGAIN1:;
+	for(int i = freeHint; i < 292; i++)
+	{
+		if(data[i].len != 0)
+			continue;
+		freeHint = i+1;
+		return &data[i];
+	}
+	if(freeHint != 0)
+	{
+		freeHint = 0;
+		goto TRY_AGAIN1;
+	}
+	return NULL;
+}
 
 class UnProtect
 {
@@ -26,45 +175,60 @@ private:
 	DWORD flOldProtect;
 };
 
-bool hotPatch(void* lpNewProc, void* lpOldProc)
+bool hotPatch(void* lpNewProc, void* lpOldProc, void** lpPatchProc)
 {
 	// check signature
-	BYTE* funcBase = (BYTE*)(lpOldProc)-5;
-	if(memcmp(funcBase, "\x90\x90\x90\x90\x90\x8B\xFF", 7))
+	int bytesNeeded = 5;
+	BYTE* funcBase = (BYTE*)(lpOldProc);
+	if(memcmp(funcBase-5, "\x90\x90\x90\x90\x90", 5) == 0)
+		bytesNeeded = 2;
+	
+	// try and room for jump
+	int bytesTaken = 0;
+	while(bytesTaken < bytesNeeded)
+	{
+		int len = instLen(funcBase+bytesTaken);
+		if(len == -1)
+			return false;
+		bytesTaken += len;
+	}
+	if(bytesTaken > 8)
 		return false;
-	if(!lpNewProc)
-		return true;
-
-	// modify code
-	UnProtect unProtect(funcBase, 7);
-	*(BYTE*)(funcBase+0) = 0xE9;
-	*(size_t*)(funcBase+1) = (BYTE*)(lpNewProc)-funcBase-5;
-	*(BYTE*)(funcBase+5) = 0xEB;
-	*(BYTE*)(funcBase+6) = 0xF9;
+		
+	// prepare patchProc
+	PatchPage::PatchEntry* pe = patchPage.Alloc();
+	if(pe == NULL)
+		return NULL;
+	if(bytesNeeded != 2)
+		pe->len = bytesTaken;
+	memcpy(pe->code, funcBase, bytesTaken);
+	pe->code[bytesTaken] = 0xE9;
+	*(size_t*)&pe->code[bytesTaken+1] = 
+		(size_t)(funcBase-pe->code-5);
+	if( lpPatchProc != NULL )
+		*lpPatchProc = (void*)pe->code;
+	
+	// Patch the code
+	UnProtect unProtect(funcBase-5, 13);
+	if(bytesNeeded == 2)
+	{
+		funcBase -= 5;
+		*(BYTE*)(funcBase+0) = 0xE9;
+		*(size_t*)(funcBase+1) = (BYTE*)(lpNewProc)-funcBase-5;
+		*(short*)(funcBase+5) = 0xF9EB;
+	}
+	else
+	{
+		BYTE tmp[8] = { 0xE9 };
+		*(DWORD*)(tmp+4) = *(DWORD*)(funcBase+4);
+		*(size_t*)(tmp+1) = (BYTE*)(lpNewProc)-funcBase-5;
+		asm (
+			"movq		(%0), %%mm0 \n"
+			"movq		%%mm0, (%1)  \n"
+			:
+			: "r" (tmp), "r" (funcBase)
+			: "memory"
+		);
+	}
 	return true;
 }
-
-void* callPatch(void* lpNewProc, void* lpCall)
-{
-	// check signature
-	BYTE* callBase = (BYTE*)lpCall;
-	void* lpOldCall = *(void**)(callBase+1);
-	if(callBase[0] != 0xE8)
-		return NULL;
-	if(!lpNewProc)
-		return lpOldCall;
-		
-	// modify code
-	UnProtect unProtect(callBase+1, 4);
-	*(size_t*)(callBase+1) = (BYTE*)(lpNewProc)-callBase-5;
-	return lpOldCall;
-}
-
-void jmpPatch(void* lpNewProc, void* lpJmp)
-{
-	// modify code (no check)
-	BYTE* jmpBase = (BYTE*)lpJmp;
-	UnProtect unProtect(jmpBase, 5);
-	*(BYTE*)(jmpBase+0) = 0xE9;
-	*(size_t*)(jmpBase+1) = (BYTE*)(lpNewProc)-jmpBase-5;
-}	
