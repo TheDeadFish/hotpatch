@@ -1,3 +1,6 @@
+// Hotpatch V2.1, 14/12/2013
+// DeadFish Shitware
+
 #include <windows.h>
 #include <string.h>
 #include "hotpatch.h"
@@ -175,7 +178,7 @@ private:
 	DWORD flOldProtect;
 };
 
-bool hotPatch(void* lpNewProc, void* lpOldProc, void** lpPatchProc)
+bool hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 {
 	// check signature
 	int bytesNeeded = 5;
@@ -196,17 +199,19 @@ bool hotPatch(void* lpNewProc, void* lpOldProc, void** lpPatchProc)
 		return false;
 		
 	// prepare patchProc
-	PatchPage::PatchEntry* pe = patchPage.Alloc();
-	if(pe == NULL)
-		return NULL;
-	if(bytesNeeded != 2)
-		pe->len = bytesTaken;
-	memcpy(pe->code, funcBase, bytesTaken);
-	pe->code[bytesTaken] = 0xE9;
-	*(size_t*)&pe->code[bytesTaken+1] = 
-		(size_t)(funcBase-pe->code-5);
 	if( lpPatchProc != NULL )
+	{
+		PatchPage::PatchEntry* pe = patchPage.Alloc();
+		if(pe == NULL)
+			return false;
+		if(bytesNeeded != 2)
+			pe->len = bytesTaken;
+		memcpy(pe->code, funcBase, bytesTaken);
+		pe->code[bytesTaken] = 0xE9;
+		*(size_t*)&pe->code[bytesTaken+1] = 
+			(size_t)(funcBase-pe->code-5);
 		*lpPatchProc = (void*)pe->code;
+	}
 	
 	// Patch the code
 	UnProtect unProtect(funcBase-5, 13);
