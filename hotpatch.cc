@@ -1,4 +1,4 @@
-// Hotpatch V2.2, 08/01/2014
+// Hotpatch V2.22, 11/01/2014
 // DeadFish Shitware
 
 #include <windows.h>
@@ -12,6 +12,7 @@
 #define IMPL 0x40
 #define OFFS 0x50
 #define GRP5 0x60
+#define GRP3 0x70
 
 static const char OneByte[] = {
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 00
@@ -44,7 +45,7 @@ static const char OneByte[] = {
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // D8
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // E0
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // E8
-	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|REGM, 1|REGM, // F0
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|GRP3, 5|GRP3, // F0
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|REGM, 1|GRP5  // F8
 }; 
 
@@ -71,6 +72,10 @@ int instLen(void* ptr)
 		case SEGM:
 			length++;
 			continue;
+		case GRP3:
+			if((regmem >> 3) & 7)
+				size = 1;
+			if(0){
 		case GRP5:
 			switch((regmem >> 3) & 7)
 			{
@@ -80,7 +85,7 @@ int instLen(void* ptr)
 				break;
 			default:
 				return -1;
-			}
+			}}
 		case REGM:
 			switch(regmem >> 6)
 			{
@@ -125,20 +130,21 @@ struct PatchPage
 	PatchEntry* Alloc(void);
 	void Free(PatchEntry* entry)
 	{	entry->len = 0; }
-	PatchPage();
 private:
 	PatchEntry* data;
 	int freeHint;
 } patchPage;
 
-PatchPage::PatchPage(void)
-{
-	data = (PatchEntry*)VirtualAlloc(0, 4096,
-		MEM_COMMIT, PAGE_EXECUTE_READWRITE);	
-}
-
 PatchPage::PatchEntry* PatchPage::Alloc(void)
 {
+	if(data == NULL)
+	{
+		data = (PatchEntry*)VirtualAlloc(0, 4096,
+			MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+		if(data == NULL)
+			return NULL;
+	}
+
 TRY_AGAIN1:;
 	for(int i = freeHint; i < 292; i++)
 	{
@@ -178,7 +184,14 @@ private:
 	DWORD flOldProtect;
 };
 
-bool hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
+static
+void hotPatchError()
+{
+	RaiseException(0xC0000001,
+		EXCEPTION_NONCONTINUABLE, 0, NULL);
+}
+
+void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 {
 	// check signature
 	int bytesNeeded = 5;
@@ -194,20 +207,20 @@ bool hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 		{
 			int len = instLen(funcBase+bytesTaken);
 			if(len == -1)
-				return false;
+				hotPatchError();
 			bytesTaken += len;
 		}
 		if(bytesTaken > 8)
-			return false;
-	
+			hotPatchError();
+
 		// prepare patchProc
 		PatchPage::PatchEntry* pe = patchPage.Alloc();
 		if(pe == NULL)
-			return false;
+			hotPatchError();
 		if(bytesNeeded != 2)
-			pe->len = bytesTaken;
 		memcpy(pe->code, funcBase, bytesTaken);
 		pe->code[bytesTaken] = 0xE9;
+			pe->len = bytesTaken;
 		*(size_t*)&pe->code[bytesTaken+1] = 
 			(size_t)(funcBase-pe->code-5);
 		*lpPatchProc = (void*)pe->code;
@@ -235,5 +248,4 @@ bool hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 			: "memory"
 		);
 	}
-	return true;
 }
