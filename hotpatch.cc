@@ -1,4 +1,4 @@
-// Hotpatch V2.23, 13/01/2014
+// Hotpatch V2.24, 20/02/2014
 // DeadFish Shitware
 
 #include <windows.h>
@@ -217,7 +217,6 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 		PatchPage::PatchEntry* pe = patchPage.Alloc();
 		if(pe == NULL)
 			hotPatchError();
-		if(bytesNeeded != 2)
 		memcpy(pe->code, funcBase, bytesTaken);
 		pe->code[bytesTaken] = 0xE9;
 			pe->len = bytesTaken;
