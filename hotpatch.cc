@@ -1,4 +1,4 @@
-// Hotpatch V2.1, 14/12/2013
+// Hotpatch V2.2, 08/01/2014
 // DeadFish Shitware
 
 #include <windows.h>
@@ -186,21 +186,21 @@ bool hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 	if(memcmp(funcBase-5, "\x90\x90\x90\x90\x90", 5) == 0)
 		bytesNeeded = 2;
 	
-	// try and room for jump
-	int bytesTaken = 0;
-	while(bytesTaken < bytesNeeded)
-	{
-		int len = instLen(funcBase+bytesTaken);
-		if(len == -1)
-			return false;
-		bytesTaken += len;
-	}
-	if(bytesTaken > 8)
-		return false;
-		
-	// prepare patchProc
 	if( lpPatchProc != NULL )
 	{
+		// try and room for jump
+		int bytesTaken = 0;
+		while(bytesTaken < bytesNeeded)
+		{
+			int len = instLen(funcBase+bytesTaken);
+			if(len == -1)
+				return false;
+			bytesTaken += len;
+		}
+		if(bytesTaken > 8)
+			return false;
+	
+		// prepare patchProc
 		PatchPage::PatchEntry* pe = patchPage.Alloc();
 		if(pe == NULL)
 			return false;

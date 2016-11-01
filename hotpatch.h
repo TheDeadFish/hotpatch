@@ -1,4 +1,4 @@
-// Hotpatch V2.1, 14/12/2013
+// Hotpatch V2.2, 08/01/2014
 // DeadFish Shitware
 
 #ifndef _HOTPATCH_H_
