@@ -1,4 +1,4 @@
-// Hotpatch V2.22, 11/01/2014
+// Hotpatch V2.23, 13/01/2014
 // DeadFish Shitware
 
 #include <windows.h>
@@ -125,7 +125,7 @@ struct PatchPage
 	struct PatchEntry
 	{
 		BYTE len;
-		BYTE code[13];
+		BYTE code[31];
 	};
 	PatchEntry* Alloc(void);
 	void Free(PatchEntry* entry)
@@ -146,7 +146,7 @@ PatchPage::PatchEntry* PatchPage::Alloc(void)
 	}
 
 TRY_AGAIN1:;
-	for(int i = freeHint; i < 292; i++)
+	for(int i = freeHint; i < 128; i++)
 	{
 		if(data[i].len != 0)
 			continue;
@@ -210,7 +210,7 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 				hotPatchError();
 			bytesTaken += len;
 		}
-		if(bytesTaken > 8)
+		if(bytesTaken > 26)
 			hotPatchError();
 
 		// prepare patchProc
