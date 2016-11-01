@@ -1,4 +1,4 @@
-// Hotpatch V2.24, 20/02/2014
+// Hotpatch V2.25, 21/01/2015
 // DeadFish Shitware
 
 #include <windows.h>
@@ -6,7 +6,7 @@
 #include "hotpatch.h"
 
 #define SKIP 0x00
-#define WORD 0x10
+#define WROD 0x10
 #define SEGM 0x20
 #define REGM 0x30
 #define IMPL 0x40
@@ -27,7 +27,7 @@ static const char OneByte[] = {
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 48
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 50
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 58
-	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 1|SEGM, 1|SEGM, 1|WORD, 0|SKIP, // 60
+	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 1|SEGM, 1|SEGM, 1|WROD, 0|SKIP, // 60
 	5|IMPL, 5|REGM, 2|IMPL, 2|REGM, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 68
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 70
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 78
@@ -67,7 +67,7 @@ int instLen(void* ptr)
 		{
 		case SKIP:
 			return -1;
-		case WORD:
+		case WROD:
 			word = true;
 		case SEGM:
 			length++;
@@ -196,12 +196,15 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 	// check signature
 	int bytesNeeded = 5;
 	BYTE* funcBase = (BYTE*)(lpOldProc);
-	if(memcmp(funcBase-5, "\x90\x90\x90\x90\x90", 5) == 0)
-		bytesNeeded = 2;
+	if(memcmp(funcBase-5, "\x90\x90\x90\x90\x90", 5) == 0) {
+		bytesNeeded = (*((WORD*)funcBase) != 0xFF8B) ? 2 : 0; }
 	
 	if( lpPatchProc != NULL )
 	{
 		// try and room for jump
+		if(bytesNeeded == 0) {
+			*lpPatchProc = (void*)(funcBase+2);
+			goto PATCH_CODE; }
 		int bytesTaken = 0;
 		while(bytesTaken < bytesNeeded)
 		{
@@ -226,25 +229,18 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 	}
 	
 	// Patch the code
+PATCH_CODE:
 	UnProtect unProtect(funcBase-5, 13);
-	if(bytesNeeded == 2)
+	if(bytesNeeded != 5)
 	{
 		funcBase -= 5;
 		*(BYTE*)(funcBase+0) = 0xE9;
 		*(size_t*)(funcBase+1) = (BYTE*)(lpNewProc)-funcBase-5;
-		*(short*)(funcBase+5) = 0xF9EB;
+		*(WORD*)(funcBase+5) = 0xF9EB;
 	}
 	else
 	{
-		BYTE tmp[8] = { 0xE9 };
-		*(DWORD*)(tmp+4) = *(DWORD*)(funcBase+4);
-		*(size_t*)(tmp+1) = (BYTE*)(lpNewProc)-funcBase-5;
-		asm (
-			"movq		(%0), %%mm0 \n"
-			"movq		%%mm0, (%1)  \n"
-			:
-			: "r" (tmp), "r" (funcBase)
-			: "memory"
-		);
+		*(BYTE*)(funcBase+0) = 0xE9;
+		*(size_t*)(funcBase+1) = (BYTE*)(lpNewProc)-funcBase-5;
 	}
 }
