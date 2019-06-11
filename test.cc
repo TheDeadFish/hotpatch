@@ -14,7 +14,13 @@ BOOL WINAPI Beep_hook(
 
 int main()
 {
-	HOTPATCH(0x77E72EC0, &Beep_hook, &Beep_orgPtr);
+	HMODULE hK32 = GetModuleHandleA("kernel32.dll");
+	FARPROC beep = GetProcAddress(hK32, "Beep");
+	
+	
+
+
+	HOTPATCH(beep, &Beep_hook, &Beep_orgPtr);
 	Beep(1000, 100); Beep(2000, 100);
 }
 

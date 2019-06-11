@@ -55,9 +55,15 @@ int instLen(void* ptr)
 		(unsigned char*)ptr;
 	int length = 0;
 	bool word = false;
+	byte rex = 0;
 	
 	while(1)
 	{
+	#ifdef __x86_64__
+		if((*bptr & 0xF0) == 0x40) {
+			rex = *bptr++; continue; }
+	#endif
+		
 		int opcode = OneByte[*bptr++];
 		int regmem = *bptr;
 		int size = opcode & 0x0F;
