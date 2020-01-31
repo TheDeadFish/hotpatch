@@ -4,6 +4,11 @@
 #ifndef _HOTPATCH_H_
 #define _HOTPATCH_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define HOTPATCH(old, new, pp) hotPatch((void*)old, (void*)new, (void**)pp)
 #define HOTCALL(ftype, addr) (*((typeof(&ftype))(size_t(addr))))
 void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc);
@@ -17,15 +22,8 @@ int hotPatch_getLen(BYTE* funcBase, int bytesNeeded);
 void* hotPatch_getCall_(void* ptr);
 void* hotPatch_getCall(void* ptr);
 
-
-
-
-
-
-
-
-
-
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif
