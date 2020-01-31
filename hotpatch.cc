@@ -197,6 +197,35 @@ void hotPatchError()
 		EXCEPTION_NONCONTINUABLE, 0, NULL);
 }
 
+static
+void hotPatch_makeJump(BYTE* src, BYTE* dst)
+{
+	*(BYTE*)src = 0xE9;
+	*(int*)(src+1) = (dst-src)-5;
+}
+
+int hotPatch_getLen(BYTE* funcBase, int bytesNeeded)
+{
+	int bytesTaken = 0;
+	while(bytesTaken < bytesNeeded)
+	{
+		int len = instLen(funcBase+bytesTaken);
+		if(len < 0) return len;
+		bytesTaken += len;
+	}
+	return bytesTaken;
+}
+
+void hotPatch_static(void* lpPatchProc,
+	void* lpOldProc, DWORD maxSize)
+{
+	BYTE* funcBase = (BYTE*)(lpOldProc);
+	int bytesTaken = hotPatch_getLen(funcBase, 5);
+	if(bytesTaken > maxSize) hotPatchError();
+	memcpy(lpPatchProc, funcBase, bytesTaken);
+	hotPatch_makeJump((BYTE*)lpPatchProc+bytesTaken, funcBase+bytesTaken);
+}
+
 void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 {
 	// check signature
