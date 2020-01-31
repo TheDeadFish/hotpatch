@@ -49,7 +49,7 @@ static const char OneByte[] = {
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|REGM, 1|GRP5  // F8
 }; 
 
-int instLen(void* ptr)
+int hotPatch_instLen(void* ptr)
 {
 	unsigned char* bptr =
 		(unsigned char*)ptr;
@@ -204,16 +204,37 @@ void hotPatch_makeJump(BYTE* src, BYTE* dst)
 	*(int*)(src+1) = (dst-src)-5;
 }
 
+static 
+void* hotPatch_getJump(void* ptr_)
+{
+	BYTE* ptr = (BYTE*)ptr_;
+	return ptr+*(int*)(ptr+1)+5;
+}
+
 int hotPatch_getLen(BYTE* funcBase, int bytesNeeded)
 {
 	int bytesTaken = 0;
 	while(bytesTaken < bytesNeeded)
 	{
-		int len = instLen(funcBase+bytesTaken);
+		int len = hotPatch_instLen(funcBase+bytesTaken);
 		if(len < 0) return len;
 		bytesTaken += len;
 	}
 	return bytesTaken;
+}
+
+void* hotPatch_getCall_(void* ptr_)
+{
+	BYTE* ptr = (BYTE*)ptr_;
+	while(*ptr != 0xE8) { ptr += 
+		hotPatch_instLen(ptr); }
+	return ptr;
+}
+
+void* hotPatch_getCall(void* ptr)
+{
+	return hotPatch_getJump(
+		hotPatch_getCall_(ptr));
 }
 
 void hotPatch_static(void* lpPatchProc,
@@ -243,7 +264,7 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 		int bytesTaken = 0;
 		while(bytesTaken < bytesNeeded)
 		{
-			int len = instLen(funcBase+bytesTaken);
+			int len = hotPatch_instLen(funcBase+bytesTaken);
 			if(len == -1)
 				hotPatchError();
 			bytesTaken += len;
