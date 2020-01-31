@@ -198,10 +198,10 @@ void hotPatchError()
 }
 
 static
-void hotPatch_makeJump(BYTE* src, BYTE* dst)
+void hotPatch_makeJump(BYTE* src_, void* dst_)
 {
-	*(BYTE*)src = 0xE9;
-	*(int*)(src+1) = (dst-src)-5;
+	BYTE *src = (BYTE*)src_, *dst = (BYTE*)dst_;
+	*src = 0xE9; *(int*)(src+1) = (dst-src)-5;
 }
 
 static 
@@ -247,6 +247,14 @@ void hotPatch_static(void* lpPatchProc,
 	hotPatch_makeJump((BYTE*)lpPatchProc+bytesTaken, funcBase+bytesTaken);
 }
 
+void* xheap_alloc(size_t size)
+{
+	if(size > 31) return NULL;
+	PatchPage::PatchEntry* pe = patchPage.Alloc();
+	if(pe == NULL) return NULL;
+	pe->len = size; return pe->code;
+}
+
 void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 {
 	// check signature
@@ -261,27 +269,15 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 		if(bytesNeeded == 0) {
 			*lpPatchProc = (void*)(funcBase+2);
 			goto PATCH_CODE; }
-		int bytesTaken = 0;
-		while(bytesTaken < bytesNeeded)
-		{
-			int len = hotPatch_instLen(funcBase+bytesTaken);
-			if(len == -1)
-				hotPatchError();
-			bytesTaken += len;
-		}
-		if(bytesTaken > 26)
-			hotPatchError();
-
-		// prepare patchProc
-		PatchPage::PatchEntry* pe = patchPage.Alloc();
-		if(pe == NULL)
-			hotPatchError();
-		memcpy(pe->code, funcBase, bytesTaken);
-		pe->code[bytesTaken] = 0xE9;
-			pe->len = bytesTaken;
-		*(size_t*)&pe->code[bytesTaken+1] = 
-			(size_t)(funcBase-pe->code-5);
-		*lpPatchProc = (void*)pe->code;
+		
+		int bytesTaken = hotPatch_getLen(
+			funcBase, bytesNeeded);
+		BYTE* pe = (BYTE*)xheap_alloc(bytesTaken+5);
+		if(pe == NULL) hotPatchError();
+		
+		memcpy(pe, funcBase, bytesTaken);
+		hotPatch_makeJump(pe+bytesTaken, lpNewProc);		
+		*lpPatchProc = (void*)pe;
 	}
 	
 	// Patch the code
@@ -289,14 +285,11 @@ PATCH_CODE:
 	UnProtect unProtect(funcBase-5, 13);
 	if(bytesNeeded != 5)
 	{
-		funcBase -= 5;
-		*(BYTE*)(funcBase+0) = 0xE9;
-		*(size_t*)(funcBase+1) = (BYTE*)(lpNewProc)-funcBase-5;
-		*(WORD*)(funcBase+5) = 0xF9EB;
+		hotPatch_makeJump(funcBase-5, lpNewProc);
+		*(WORD*)(funcBase) = 0xF9EB;
 	}
 	else
 	{
-		*(BYTE*)(funcBase+0) = 0xE9;
-		*(size_t*)(funcBase+1) = (BYTE*)(lpNewProc)-funcBase-5;
+		hotPatch_makeJump(funcBase, lpNewProc);
 	}
 }
