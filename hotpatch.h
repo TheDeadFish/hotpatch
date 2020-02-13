@@ -10,7 +10,7 @@ extern "C" {
 
 
 #define HOTPATCH(old, new, pp) hotPatch((void*)old, (void*)new, (void**)pp)
-#define HOTCALL(ftype, addr) (*((typeof(&ftype))(size_t(addr))))
+#define HOTCALL(ftype, addr) (*((typeof(&ftype))((size_t)(addr))))
 void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc);
 
 void hotPatch_static(void* lpPatchProc,
