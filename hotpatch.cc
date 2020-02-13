@@ -13,6 +13,7 @@
 #define OFFS 0x50
 #define GRP5 0x60
 #define GRP3 0x70
+#define FLOW 0x80								 
 
 static const char OneByte[] = {
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 00
@@ -44,12 +45,12 @@ static const char OneByte[] = {
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, // D0
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // D8
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // E0
-	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // E8
+	5|FLOW, 0|SKIP, 0|SKIP, 0|SKIP, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // E8
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|GRP3, 5|GRP3, // F0
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|REGM, 1|GRP5  // F8
 }; 
 
-int hotPatch_instLen(void* ptr)
+int hotPatch_instLen(void* ptr, int flags)
 {
 	unsigned char* bptr =
 		(unsigned char*)ptr;
@@ -116,6 +117,11 @@ int hotPatch_instLen(void* ptr)
 			if(( size == 5 )
 			&&( word == true))
 				size = 3;
+			if(0){
+		case FLOW:
+			if(!flags) 
+				return -1;
+			}
 		case OFFS:
 			length += size;
 			break;
@@ -175,7 +181,7 @@ int hotPatch_getLen(BYTE* funcBase, int bytesNeeded)
 	int bytesTaken = 0;
 	while(bytesTaken < bytesNeeded)
 	{
-		int len = hotPatch_instLen(funcBase+bytesTaken);
+		int len = hotPatch_instLen(funcBase+bytesTaken,0);
 		if(len < 0) return len;
 		bytesTaken += len;
 	}
@@ -186,7 +192,7 @@ void* hotPatch_getCall_(void* ptr_, int i)
 {
 	BYTE* ptr = (BYTE*)ptr_;
 	while((*ptr != 0xE8) || (--i >= 0)) { 
-		ptr += hotPatch_instLen(ptr); }
+		ptr += hotPatch_instLen(ptr,1); }
 	return ptr;
 }
 
