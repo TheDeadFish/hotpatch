@@ -126,47 +126,6 @@ int hotPatch_instLen(void* ptr)
 }
 
 
-struct PatchPage
-{
-	struct PatchEntry
-	{
-		BYTE len;
-		BYTE code[31];
-	};
-	PatchEntry* Alloc(void);
-	void Free(PatchEntry* entry)
-	{	entry->len = 0; }
-private:
-	PatchEntry* data;
-	int freeHint;
-} patchPage;
-
-PatchPage::PatchEntry* PatchPage::Alloc(void)
-{
-	if(data == NULL)
-	{
-		data = (PatchEntry*)VirtualAlloc(0, 4096,
-			MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-		if(data == NULL)
-			return NULL;
-	}
-
-TRY_AGAIN1:;
-	for(int i = freeHint; i < 128; i++)
-	{
-		if(data[i].len != 0)
-			continue;
-		freeHint = i+1;
-		return &data[i];
-	}
-	if(freeHint != 0)
-	{
-		freeHint = 0;
-		goto TRY_AGAIN1;
-	}
-	return NULL;
-}
-
 class UnProtect
 {
 public:
@@ -247,12 +206,17 @@ void hotPatch_static(void* lpPatchProc,
 	hotPatch_makeJump((BYTE*)lpPatchProc+bytesTaken, funcBase+bytesTaken);
 }
 
+
+__attribute__((section(".hotPatch,\"xw\"#")))
+static BYTE  hotPatch_data[4096];
+static int hotPatch_size;
+
 void* xheap_alloc(size_t size)
 {
-	if(size > 31) return NULL;
-	PatchPage::PatchEntry* pe = patchPage.Alloc();
-	if(pe == NULL) return NULL;
-	pe->len = size; return pe->code;
+	int rem = sizeof(hotPatch_data)-hotPatch_size;
+	if(rem < size) return NULL;
+	void* p = hotPatch_data+hotPatch_size;
+	hotPatch_size += size; return p;
 }
 
 void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
@@ -276,7 +240,8 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
 		if(pe == NULL) hotPatchError();
 		
 		memcpy(pe, funcBase, bytesTaken);
-		hotPatch_makeJump(pe+bytesTaken, lpNewProc);		
+		hotPatch_makeJump(pe+bytesTaken, 
+			funcBase+bytesTaken);		
 		*lpPatchProc = (void*)pe;
 	}
 	
