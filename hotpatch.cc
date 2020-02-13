@@ -25,7 +25,7 @@
  #define REXQ IMPL
 #endif
 
-static const char OneByte[] = {
+static const BYTE OneByte[] = {
 	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|IMPL, // 00
 	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|SKIP, // 08
 	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|IMPL, // 10
@@ -60,6 +60,9 @@ static const char OneByte[] = {
 	0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|REGM, 0|GRP5  // F8
 }; 
 
+#define CASE0(x, ...) if(0){ case x>>4: __VA_ARGS__; }
+#define CASEX(x, ...) { case x>>4: __VA_ARGS__; }
+
 InstLen hotPatch_instLen(void* ptr, int flags)
 {
 	unsigned char* bptr =
@@ -74,78 +77,49 @@ InstLen hotPatch_instLen(void* ptr, int flags)
 		int opcode = OneByte[*bptr++];
 		int regmem = *bptr;
 		int size = opcode & 0x0F;
-		int type = opcode & 0xF0;
+		int type = opcode >> 4;
 		length++;
 
 		switch(type)
 		{
-		case SKIP:
-			return {-1, 0};
-		case WROD:
-			word = true;
+		CASEX(SKIP, return {-1, 0});
+		CASE0(WROD, word = true);
 #ifdef __x86_64__
-			if(0) {
-		case REXQ:
-			quad = true; }
+		CASE0(REXQ, quad = true);
 #endif
-		case SEGM:
-			continue;
-		case GRP3:
-			if((regmem >> 3) & 7)
-				size = 1;
-			if(0){
-		case GRP5:
-			switch((regmem >> 3) & 7)
-			{
-			case 0:
-			case 1:
-			case 6:
-				break;
-			default:
-				return {-1, 0};
-			}}
-		case REGM:
-			switch(regmem >> 6)
-			{
-			case 0:
-				length += 1;
-				if((regmem & 7) == 4)
-					length += 1;
-				if((regmem & 7) == 5) {
-					offset = length;
-					length += 4; }
-				break;
-			case 2:
-				length += 3;
-			case 1:
-				length += 1;
-				if((regmem & 7) == 4)
-					length += 1;
-			case 3:
-				length += 1;
-				break;
+		CASEX(SEGM, continue);
+		
+		CASEX(GRP3, 
+			if((regmem >> 3) & 7)	
+				size = 1
+		);
+		
+		CASE0(GRP5, 
+			switch((regmem >> 3) & 7) {
+			case 0: case 1: case 6: break;
+			default: return {-1, 0}; }
+		);
+		
+		CASEX(REGM, length++;
+			if(regmem < 0xC0) {
+				if((regmem & 7) == 4)	length++;
+				if(regmem >= 0x40) { length++;
+					if(regmem >= 0x80) length += 3;
+				} else if((regmem & 7) == 5) {
+					offset = length; length += 4; }
 			}
+		);
 			
 #ifdef __x86_64__
-			if(0) {
-		case IM64: if(quad) size += 4; 
-			}
+		CASE0(IM64, if(quad) size += 4)
 #endif
-		case IMPL:
-			if(( size == 4 )
-			&&( word == true))
-				size = 2;
-			if(0){
-		case FLOW:
-			if(!flags) 
-				return {-1, 0};
-			}
-			if(0) {
-		case OFFS:
-			offset = length; }
-		
-			length += size;
+		CASEX(IMPL,	if(word && (size == 4)) size = 2)
+		CASE0(FLOW, if(!flags) return {-1, 0})
+		CASE0(OFFS, offset = length)
+			length += size;	
 			break;
+		default:
+			__builtin_unreachable();
 		}
 		break;
 	}
