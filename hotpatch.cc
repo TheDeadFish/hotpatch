@@ -13,7 +13,17 @@
 #define OFFS 0x50
 #define GRP5 0x60
 #define GRP3 0x70
-#define FLOW 0x80								 
+#define FLOW 0x80
+
+#ifdef __x86_64__
+ #define IM64 0x90
+ #define REXD SEGM
+ #define REXQ 0xA0
+#else 
+ #define IM64 IMPL
+ #define REXD IMPL
+ #define REXQ IMPL
+#endif
 
 static const char OneByte[] = {
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 00
@@ -24,8 +34,8 @@ static const char OneByte[] = {
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 28
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 30
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 38
-	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 40
-	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 48
+	1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, // 40
+	1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, // 48
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 50
 	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 58
 	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 1|SEGM, 1|SEGM, 1|WROD, 0|SKIP, // 60
@@ -39,7 +49,7 @@ static const char OneByte[] = {
 	5|OFFS, 5|OFFS, 5|OFFS, 5|OFFS, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // A0
 	2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // A8
 	2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // B0
-	5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, 5|IMPL, // B8
+	5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, // B8
 	2|REGM, 2|REGM, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|REGM, 5|REGM, // C0
 	4|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // C8
 	1|REGM, 1|REGM, 1|REGM, 1|REGM, 1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, // D0
@@ -56,15 +66,10 @@ int hotPatch_instLen(void* ptr, int flags)
 		(unsigned char*)ptr;
 	int length = 0;
 	bool word = false;
-	byte rex = 0;
+	bool quad = false;
 	
 	while(1)
 	{
-	#ifdef __x86_64__
-		if((*bptr & 0xF0) == 0x40) {
-			rex = *bptr++; continue; }
-	#endif
-		
 		int opcode = OneByte[*bptr++];
 		int regmem = *bptr;
 		int size = opcode & 0x0F;
@@ -76,6 +81,11 @@ int hotPatch_instLen(void* ptr, int flags)
 			return -1;
 		case WROD:
 			word = true;
+#ifdef __x86_64__
+			if(0) {
+		case REXQ:
+			quad = true; }
+#endif
 		case SEGM:
 			length++;
 			continue;
@@ -113,6 +123,12 @@ int hotPatch_instLen(void* ptr, int flags)
 				length += 1;
 				break;
 			}
+			
+#ifdef __x86_64__
+			if(0) {
+		case IM64: if(quad) size += 4; 
+			}
+#endif
 		case IMPL:
 			if(( size == 5 )
 			&&( word == true))
