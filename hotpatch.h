@@ -16,8 +16,8 @@ void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc);
 void hotPatch_static(void* lpPatchProc,
 	void* lpOldProc, DWORD maxSize);
 	
-
-int hotPatch_instLen(void* ptr, int flags);
+typedef struct { int len; int ofs; } InstLen;
+InstLen hotPatch_instLen(void* ptr, int flags);
 int hotPatch_getLen(BYTE* funcBase, int bytesNeeded);
 void* hotPatch_getCall_(void* ptr, int i);
 void* hotPatch_getCall(void* ptr, int i);

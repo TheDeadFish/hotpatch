@@ -26,45 +26,46 @@
 #endif
 
 static const char OneByte[] = {
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 00
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 0|SKIP, // 08
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 10
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, // 18
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 20
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 28
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 30
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 2|IMPL, 5|IMPL, 1|SEGM, 1|IMPL, // 38
-	1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, 1|REXD, // 40
-	1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, 1|REXQ, // 48
-	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 50
-	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 58
-	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 1|SEGM, 1|SEGM, 1|WROD, 0|SKIP, // 60
-	5|IMPL, 5|REGM, 2|IMPL, 2|REGM, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 68
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|IMPL, // 00
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|SKIP, // 08
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|IMPL, // 10
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|IMPL, 0|IMPL, // 18
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|SEGM, 0|IMPL, // 20
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|SEGM, 0|IMPL, // 28
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|SEGM, 0|IMPL, // 30
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 1|IMPL, 4|IMPL, 0|SEGM, 0|IMPL, // 38
+	0|REXD, 0|REXD, 0|REXD, 0|REXD, 0|REXD, 0|REXD, 0|REXD, 0|REXD, // 40
+	0|REXQ, 0|REXQ, 0|REXQ, 0|REXQ, 0|REXQ, 0|REXQ, 0|REXQ, 0|REXQ, // 48
+	0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // 50
+	0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // 58
+	0|IMPL, 0|IMPL, 0|SKIP, 0|SKIP, 0|SEGM, 0|SEGM, 0|WROD, 0|SKIP, // 60
+	4|IMPL, 4|REGM, 1|IMPL, 1|REGM, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // 68
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 70
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 78
-	2|REGM, 5|REGM, 0|SKIP, 2|REGM, 1|REGM, 1|REGM, 1|REGM, 1|REGM, // 80
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 0|SKIP, 1|REGM, 0|SKIP, 1|REGM, // 88
-	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // 90
-	1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 98
-	5|OFFS, 5|OFFS, 5|OFFS, 5|OFFS, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // A0
-	2|IMPL, 5|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // A8
-	2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // B0
-	5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, 5|IM64, // B8
-	2|REGM, 2|REGM, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|REGM, 5|REGM, // C0
-	4|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // C8
-	1|REGM, 1|REGM, 1|REGM, 1|REGM, 1|IMPL, 1|IMPL, 0|SKIP, 0|SKIP, // D0
+	1|REGM, 4|REGM, 0|SKIP, 1|REGM, 0|REGM, 0|REGM, 0|REGM, 0|REGM, // 80
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 0|SKIP, 0|REGM, 0|SKIP, 0|REGM, // 88
+	0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // 90
+	0|IMPL, 0|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // 98
+	4|OFFS, 4|OFFS, 4|OFFS, 4|OFFS, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // A0
+	1|IMPL, 4|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // A8
+	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // B0
+	4|IM64, 4|IM64, 4|IM64, 4|IM64, 4|IM64, 4|IM64, 4|IM64, 4|IM64, // B8
+	1|REGM, 1|REGM, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|REGM, 4|REGM, // C0
+	4|IMPL, 0|IMPL, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // C8
+	0|REGM, 0|REGM, 0|REGM, 0|REGM, 0|IMPL, 0|IMPL, 0|SKIP, 0|SKIP, // D0
 	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, // D8
-	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|IMPL, 2|IMPL, 2|IMPL, 2|IMPL, // E0
-	5|FLOW, 0|SKIP, 0|SKIP, 0|SKIP, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // E8
-	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 2|GRP3, 5|GRP3, // F0
-	1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, 1|REGM, 1|GRP5  // F8
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|IMPL, 1|IMPL, 1|IMPL, 1|IMPL, // E0
+	4|FLOW, 0|SKIP, 0|SKIP, 0|SKIP, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, // E8
+	0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 0|SKIP, 1|GRP3, 4|GRP3, // F0
+	0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|IMPL, 0|REGM, 0|GRP5  // F8
 }; 
 
-int hotPatch_instLen(void* ptr, int flags)
+InstLen hotPatch_instLen(void* ptr, int flags)
 {
 	unsigned char* bptr =
 		(unsigned char*)ptr;
 	int length = 0;
+	int offset = 0;
 	bool word = false;
 	bool quad = false;
 	
@@ -74,11 +75,12 @@ int hotPatch_instLen(void* ptr, int flags)
 		int regmem = *bptr;
 		int size = opcode & 0x0F;
 		int type = opcode & 0xF0;
+		length++;
 
 		switch(type)
 		{
 		case SKIP:
-			return -1;
+			return {-1, 0};
 		case WROD:
 			word = true;
 #ifdef __x86_64__
@@ -87,7 +89,6 @@ int hotPatch_instLen(void* ptr, int flags)
 			quad = true; }
 #endif
 		case SEGM:
-			length++;
 			continue;
 		case GRP3:
 			if((regmem >> 3) & 7)
@@ -101,7 +102,7 @@ int hotPatch_instLen(void* ptr, int flags)
 			case 6:
 				break;
 			default:
-				return -1;
+				return {-1, 0};
 			}}
 		case REGM:
 			switch(regmem >> 6)
@@ -110,8 +111,9 @@ int hotPatch_instLen(void* ptr, int flags)
 				length += 1;
 				if((regmem & 7) == 4)
 					length += 1;
-				if((regmem & 7) == 5)
-					length += 4;
+				if((regmem & 7) == 5) {
+					offset = length;
+					length += 4; }
 				break;
 			case 2:
 				length += 3;
@@ -130,21 +132,24 @@ int hotPatch_instLen(void* ptr, int flags)
 			}
 #endif
 		case IMPL:
-			if(( size == 5 )
+			if(( size == 4 )
 			&&( word == true))
-				size = 3;
+				size = 2;
 			if(0){
 		case FLOW:
 			if(!flags) 
-				return -1;
+				return {-1, 0};
 			}
+			if(0) {
 		case OFFS:
+			offset = length; }
+		
 			length += size;
 			break;
 		}
 		break;
 	}
-	return length;
+	return {length, offset};
 }
 
 
@@ -197,7 +202,7 @@ int hotPatch_getLen(BYTE* funcBase, int bytesNeeded)
 	int bytesTaken = 0;
 	while(bytesTaken < bytesNeeded)
 	{
-		int len = hotPatch_instLen(funcBase+bytesTaken,0);
+		int len = hotPatch_instLen(funcBase+bytesTaken,0).len;
 		if(len < 0) return len;
 		bytesTaken += len;
 	}
@@ -208,7 +213,7 @@ void* hotPatch_getCall_(void* ptr_, int i)
 {
 	BYTE* ptr = (BYTE*)ptr_;
 	while((*ptr != 0xE8) || (--i >= 0)) { 
-		ptr += hotPatch_instLen(ptr,1); }
+		ptr += hotPatch_instLen(ptr,1).len; }
 	return ptr;
 }
 
