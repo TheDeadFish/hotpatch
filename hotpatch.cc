@@ -182,18 +182,18 @@ int hotPatch_getLen(BYTE* funcBase, int bytesNeeded)
 	return bytesTaken;
 }
 
-void* hotPatch_getCall_(void* ptr_)
+void* hotPatch_getCall_(void* ptr_, int i)
 {
 	BYTE* ptr = (BYTE*)ptr_;
-	while(*ptr != 0xE8) { ptr += 
-		hotPatch_instLen(ptr); }
+	while((*ptr != 0xE8) || (--i >= 0)) { 
+		ptr += hotPatch_instLen(ptr); }
 	return ptr;
 }
 
-void* hotPatch_getCall(void* ptr)
+void* hotPatch_getCall(void* ptr, int i)
 {
 	return hotPatch_getJump(
-		hotPatch_getCall_(ptr));
+		hotPatch_getCall_(ptr, i));
 }
 
 void hotPatch_static(void* lpPatchProc,

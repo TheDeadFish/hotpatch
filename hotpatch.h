@@ -19,8 +19,8 @@ void hotPatch_static(void* lpPatchProc,
 
 int hotPatch_instLen(void* ptr);
 int hotPatch_getLen(BYTE* funcBase, int bytesNeeded);
-void* hotPatch_getCall_(void* ptr);
-void* hotPatch_getCall(void* ptr);
+void* hotPatch_getCall_(void* ptr, int i);
+void* hotPatch_getCall(void* ptr, int i);
 
 #ifdef __cplusplus
 }
