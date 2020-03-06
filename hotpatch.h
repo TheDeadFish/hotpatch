@@ -22,6 +22,20 @@ int hotPatch_getLen(BYTE* funcBase, int bytesNeeded);
 void* hotPatch_getCall_(void* ptr, int i);
 void* hotPatch_getCall(void* ptr, int i);
 
+
+// imported function address with stdcall
+#define IMPGET0(fn)({ void* ret; void WINAPI _imp__##fn(\
+	); *(void**)&_imp__##fn; })
+#define IMPGET1(fn)({ void* ret; void WINAPI _imp__##fn(\
+	int); *(void**)&_imp__##fn; })
+#define IMPGET2(fn)({ void* ret; void WINAPI _imp__##fn(\
+	int,int); *(void**)&_imp__##fn; })
+#define IMPGET3(fn)({ void* ret; void WINAPI _imp__##fn(\
+	int,int,int); *(void**)&_imp__##fn; })
+#define IMPGET4(fn)({ void* ret; void WINAPI _imp__##fn(\
+	int,int,int,int); *(void**)&_imp__##fn; })
+
+
 #ifdef __cplusplus
 }
 #endif
