@@ -1,7 +1,10 @@
 setlocal
 call egcc64.bat 
-gcc hotpatch.cc %CCFLAGS2% -m32 -c 
-ar rcs %PROGRAMS%\local\lib32\libexshit.a hotpatch.o
-gcc hotpatch.cc %CCFLAGS2% -c
-ar rcs %PROGRAMS%\local\lib64\libexshit.a hotpatch.o
-del hotpatch.o
+set SRC=hotpatch.cc mempatch.cc xheap.cc
+set OBJ=hotpatch.o mempatch.o xheap.o
+
+gcc %SRC% %CCFLAGS2% -m32 -c 
+ar rcs %PROGRAMS%\local\lib32\libexshit.a %OBJ%
+gcc %SRC% %CCFLAGS2% -c
+ar rcs %PROGRAMS%\local\lib64\libexshit.a %OBJ%
+del *.o

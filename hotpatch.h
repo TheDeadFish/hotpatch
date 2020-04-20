@@ -34,7 +34,8 @@ void* hotPatch_getCall(void* ptr, int i);
 	int,int,int); *(void**)&_imp__##fn; })
 #define IMPGET4(fn)({ void* ret; void WINAPI _imp__##fn(\
 	int,int,int,int); *(void**)&_imp__##fn; })
-
+	
+void* xheap_alloc(size_t size);
 
 #ifdef __cplusplus
 }

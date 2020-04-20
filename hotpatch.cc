@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <string.h>
 #include "hotpatch.h"
+#include "mempatch.h"
 
 #define SKIP 0x00
 #define WROD 0x10
@@ -126,30 +127,6 @@ InstLen hotPatch_instLen(void* ptr, int flags)
 	return {length, offset};
 }
 
-
-class UnProtect
-{
-public:
-	UnProtect(void* base, int length)
-	{
-		size_t funcBase = (size_t)base;
-		pageBase = funcBase & ~4095;
-		pageEnd = (funcBase+4095+length) & ~4095;
-		VirtualProtect((PVOID)pageBase, pageEnd-pageBase,
-			PAGE_EXECUTE_READWRITE, &flOldProtect);	
-	}
-	~UnProtect()
-	{
-		VirtualProtect((PVOID)pageBase, pageEnd-pageBase,
-			flOldProtect, &flOldProtect);	
-	}
-
-private:
-	size_t pageBase;
-	size_t pageEnd;
-	DWORD flOldProtect;
-};
-
 static
 void hotPatchError()
 {
@@ -205,19 +182,6 @@ void hotPatch_static(void* lpPatchProc,
 	if(bytesTaken > maxSize) hotPatchError();
 	memcpy(lpPatchProc, funcBase, bytesTaken);
 	hotPatch_makeJump((BYTE*)lpPatchProc+bytesTaken, funcBase+bytesTaken);
-}
-
-
-__attribute__((section(".hotPatch,\"xw\"#")))
-static BYTE  hotPatch_data[4096];
-static int hotPatch_size;
-
-void* xheap_alloc(size_t size)
-{
-	int rem = sizeof(hotPatch_data)-hotPatch_size;
-	if(rem < size) return NULL;
-	void* p = hotPatch_data+hotPatch_size;
-	hotPatch_size += size; return p;
 }
 
 void hotPatch(void* lpOldProc, void* lpNewProc, void** lpPatchProc)
