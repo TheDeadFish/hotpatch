@@ -1,21 +1,10 @@
-set SRC=hotpatch.cc mempatch.cc xheap.cc apihook.cc callpatch.cc
-set OBJ=hotpatch.o mempatch.o xheap.o apihook.o callpatch.o
-
-:: build
-call :build 32
-call :build 64
-del *.o
+:: build library
+@call cmake_gcc
+@libmerge %PROGRAMS%\local\lib32\libexshit.a build\libhotpatch.a
+@call cmake_gcc x64
+@libmerge %PROGRAMS%\local\lib64\libexshit.a build64\libhotpatch.a
 
 :: copy include files
 copy /Y hotpatch.h %PROGRAMS%\local\include
 copy /Y apihook.h %PROGRAMS%\local\include
 copy /Y callpatch.h %PROGRAMS%\local\include
-exit /b
-
-:build
-	setlocal
-	call egccx.bat x%1
-	gcc %SRC% %CCFLAGS2% -c
-	ar rcs %PROGRAMS%\local\lib%1\libexshit.a %OBJ%
-	endlocal
-	exit /b
