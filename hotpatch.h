@@ -25,15 +25,15 @@ void* hotPatch_getCall(void* ptr, int i);
 
 // imported function address with stdcall
 #ifdef _WIN64
-	#define IMPGETX(fn,...)({ void* ret; void WINAPI __imp_##fn(__VA_ARGS__); *(void**)&__imp_##fn; })
+	#define IMPGETX(fn,sz)({ extern void* __imp_##fn; __imp_##fn; })
 #else
-	#define IMPGETX(fn,...)({ void* ret; void WINAPI _imp__##fn(__VA_ARGS__); *(void**)&_imp__##fn; })
+	#define IMPGETX(fn,sz)({ extern void* _imp_##fn; asm(".equ __imp_"#fn", __imp__"#fn"@"#sz); _imp_##fn; })
 #endif
-#define IMPGET0(fn) IMPGETX(fn,)
-#define IMPGET1(fn) IMPGETX(fn,int)
-#define IMPGET2(fn) IMPGETX(fn,int,int)
-#define IMPGET3(fn) IMPGETX(fn,int,int)
-#define IMPGET4(fn) IMPGETX(fn,int,int,int)
+#define IMPGET0(fn) IMPGETX(fn,0)
+#define IMPGET1(fn) IMPGETX(fn,4)
+#define IMPGET2(fn) IMPGETX(fn,8)
+#define IMPGET3(fn) IMPGETX(fn,12)
+#define IMPGET4(fn) IMPGETX(fn,16)
 	
 void* xheap_alloc(size_t size);
 
